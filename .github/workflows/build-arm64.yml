@@ -1,0 +1,35 @@
+name: Build ARM64 OnlyOffice (Dameng)
+
+on:
+  workflow_dispatch: # 允许在网页上无条件手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU for ARM64
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Export to Tar
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: documentserver
+          platforms: linux/arm64
+          tags: onlyoffice-dameng:arm64
+          # 核心：构建完成后直接导出为 tar 离线包
+          outputs: type=docker,dest=/tmp/onlyoffice-dameng-arm64.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: onlyoffice-arm64-offline-package
+          path: /tmp/onlyoffice-dameng-arm64.tar
+          retention-days: 3 # 包比较大，保留3天足够我们下载了
